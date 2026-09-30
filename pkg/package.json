@@ -1,0 +1,15 @@
+{
+  "name": "gerechten_selector_web",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "gerechten_selector_web_bg.wasm",
+    "gerechten_selector_web.js",
+    "gerechten_selector_web.d.ts"
+  ],
+  "main": "gerechten_selector_web.js",
+  "types": "gerechten_selector_web.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
