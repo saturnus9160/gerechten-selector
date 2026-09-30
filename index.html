@@ -3,244 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerechten Selector Pro</title>
+    <title>Menukaart Beheer</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; max-width: 650px; margin: 0 auto; background: #f5f5f7; color: #1d1d1f; }
-        h1 { font-size: 24px; text-align: center; color: #ff3b30; margin-bottom: 20px; }
-        .card { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e5e5ea; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .card-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #007aff; border-bottom: 1px solid #f2f2f7; padding-bottom: 6px; }
-        label { font-weight: 600; display: block; margin-top: 10px; font-size: 14px; }
-        select, input, button { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #d2d2d7; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        .row { display: flex; gap: 10px; margin-top: 5px; }
-        .row input, .row select { margin-top: 0; }
-        .row button { margin-top: 0; width: auto; white-space: nowrap; background: #34c759; color: white; border: none; }
-        button.primary { background: #007aff; color: white; border: none; font-size: 16px; font-weight: bold; margin-top: 15px; }
-        button:active { opacity: 0.8; }
-        .chip-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 20px; }
-        .chip { background: #e5e5ea; padding: 6px 12px; border-radius: 20px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
-        .chip .remove { color: #ff3b30; font-weight: bold; cursor: pointer; padding: 0 2px; }
-        .choice-item { background: #f2f2f7; padding: 8px 12px; border-radius: 8px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        .choice-item button { width: auto; padding: 4px 8px; font-size: 12px; background: #ff3b30; color: white; border: none; margin: 0; }
-        pre { background: #1c1c1e; color: #30d158; padding: 15px; border-radius: 10px; white-space: pre-wrap; font-family: monospace; font-size: 13px; margin-top: 15px; overflow-x: auto; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #0056b3;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-    <h1>🍽️ Gerechten Selector</h1>
+    <h1>Menukaart Configuratie</h1>
 
-    <!-- CARD 1: MAALTIJD SELECTIE -->
+    <!-- STAP 1: Maaltijd Selectie -->
     <div class="card">
-        <div class="card-title">1. Kies of Voeg Maaltijd Toe</div>
-        <select id="mealSelect"></select>
-        <div class="row" style="margin-top: 10px;">
-            <input type="text" id="newMealInput" placeholder="Bijv. Zondag Lunch">
-            <button id="addMealBtn">Voeg Maaltijd Toe</button>
+        <h3>1. Selecteer een maaltijd</h3>
+        <div id="maaltijd-knoppen" class="btn-group">
+            <!-- Deze knoppen worden automatisch ingeladen via maaltijden.json -->
+            <p>Maaltijden worden geladen...</p>
         </div>
     </div>
 
-    <!-- CARD 2: ALGEMENE BEHEER (PERSONEN & GERECHTEN) -->
-    <div class="card">
-        <div class="card-title">2. Globale Database</div>
-        <label>Personen (Gelijk voor alle maaltijden):</label>
-        <div class="row">
-            <input type="text" id="newPersonInput" placeholder="Naam persoon">
-            <button id="addPersonBtn">Voeg Toe</button>
-        </div>
-        <div class="chip-container" id="personsChips"></div>
-
-        <label style="margin-top: 15px;">Gerechten op de menukaart:</label>
-        <div class="row">
-            <input type="text" id="newDishInput" placeholder="Naam gerecht">
-            <button id="addDishBtn">Voeg Toe</button>
-        </div>
-        <div class="chip-container" id="dishesChips"></div>
-    </div>
-
-    <!-- CARD 3: INTERACTIEVE KEUZES MAPPEN -->
-    <div class="card">
-        <div class="card-title">3. Voorkeuren Koppelen voor Huidige Maaltijd</div>
-        <div class="row">
-            <select id="prefPersonSelect"><option value="">-- Kies Persoon --</option></select>
-            <select id="prefDishSelect"><option value="">-- Kies Gerecht --</option></select>
-            <button id="addChoiceBtn" style="background: #007aff;">Koppel</button>
-        </div>
+    <!-- STAP 2: Voorkeuren Koppelen (Wordt pas actief na selectie) -->
+    <div id="voorkeuren-sectie" class="card hidden">
+        <!-- De tekst hier verandert dynamisch mee met de gekozen maaltijd -->
+        <h3 id="voorkeuren-titel">Voorkeuren koppelen voor Huidige Maaltijd</h3>
         
-        <label style="margin-top: 15px;">Actieve koppelingen voor deze maaltijd:</label>
-        <div id="activeChoicesContainer"></div>
-    </div>
-
-    <!-- CARD 4: REKENEN -->
-    <div class="card">
-        <div class="card-title">4. Optimalisatie Parameters</div>
-        <label for="pInput">Maximaal aantal gerechten in totaal (P):</label>
-        <input type="number" id="pInput" value="2" min="1">
-
-        <label for="modeInput" style="margin-top: 10px;">Strategie:</label>
-        <select id="modeInput">
-            <option value="opt">Optimaal (Vergelijk alle modi)</option>
-            <option value="max">Max (Unieke personen)</option>
-            <option value="fair">Fair (Eerlijke verdeling)</option>
-            <option value="popular">Populariteit (Meeste stemmen)</option>
+        <label for="gerechten-dropdown">Beschikbare gerechten voor deze maaltijd:</label>
+        <select id="gerechten-dropdown">
+            <!-- Dit wordt gefilterd en gevuld op basis van gerechten.json -->
         </select>
 
-        <button id="calcBtn" class="primary">Bereken Groepsmenu</button>
+        <label style="display:block; margin-top: 15px;" for="opmerking">Specifieke voorkeur / Opmerking:</label>
+        <input type="text" id="opmerking" placeholder="Bijv. saus apart, vegetarisch...">
     </div>
 
-    <label style="font-weight: bold; margin-left: 5px;">📊 Uitvoer Analyse:</label>
-    <pre id="output">Voeg gegevens toe en klik op berekenen...</pre>
+    <script>
+        // Globale variabelen om de data in te bewaren na het inlezen van de bestanden
+        let beschikbareMaaltijden = [];
+        let globaleGerechtenDatabase = [];
 
-    <script type="module">
-        import init, { select_dishes } from './pkg/gerechten_selector_web.js';
+        // 1. Initialiseer de UI door de JSON-bestanden in te laden
+        async function initialiseerUI() {
+            try {
+                // Haal de maaltijd-typen op (Ontbijt, Lunch, Diner)
+                const maaltijdResponse = await fetch('maaltijden.json');
+                beschikbareMaaltijden = await maaltijdResponse.json();
 
-        // Globale State in JS Memory met jouw standaardwaarden vooraf geladen
-        let state = {
-            meals: ["Zaterdag Bites", "Zaterdag Main"],
-            activeMeal: "Zaterdag Bites",
-            persons: ["Freddy", "Nadine", "Ann", "Marc", "Sylvia"],
-            dishes: ["Tom Kha Kai", "Mi-cuit zalm", "Pulpo", "Papillon", "Pinsa"],
-            choices: {
-                "Zaterdag Bites": {
-                    "Freddy": ["Tom Kha Kai"],
-                    "Nadine": ["Tom Kha Kai", "Mi-cuit zalm"],
-                    "Sylvia": ["Pulpo", "Pinsa"]
-                },
-                "Zaterdag Main": {}
+                // Haal de globale gerechtenlijst op
+                const gerechtenResponse = await fetch('gerechten.json');
+                globaleGerechtenDatabase = await gerechtenResponse.json();
+
+                // Bouw de knoppen in de UI
+                bouwMaaltijdKnoppen();
+            } catch (error) {
+                console.error("Fout bij het initialiseren van de UI bestanden:", error);
+                document.getElementById('maaltijd-knoppen').innerHTML = "<p style='color:red;'>Fout bij het laden van configuratiebestanden.</p>";
             }
-        };
+        }
 
-        async function run() {
-            await init();
-            renderAll();
+        // 2. Maak de knoppen aan op basis van het maaltijden.json bestand
+        function bouwMaaltijdKnoppen() {
+            const knoppenContainer = document.getElementById('maaltijd-knoppen');
+            knoppenContainer.innerHTML = ''; // Maak leeg
 
-            // Event Listeners voor Maaltijden
-            document.getElementById('mealSelect').addEventListener('change', (e) => {
-                state.activeMeal = e.target.value;
-                if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
-                renderAll();
-            });
-
-            document.getElementById('addMealBtn').addEventListener('click', () => {
-                const name = document.getElementById('newMealInput').value.trim();
-                if (name && !state.meals.includes(name)) {
-                    state.meals.push(name);
-                    state.choices[name] = {};
-                    state.activeMeal = name;
-                    document.getElementById('newMealInput').value = '';
-                    renderAll();
-                }
-            });
-
-            // Personen toevoegen
-            document.getElementById('addPersonBtn').addEventListener('click', () => {
-                const name = document.getElementById('newPersonInput').value.trim();
-                if (name && !state.persons.includes(name)) {
-                    state.persons.push(name);
-                    document.getElementById('newPersonInput').value = '';
-                    renderAll();
-                }
-            });
-
-            // Gerechten toevoegen
-            document.getElementById('addDishBtn').addEventListener('click', () => {
-                const name = document.getElementById('newDishInput').value.trim();
-                if (name && !state.dishes.includes(name)) {
-                    state.dishes.push(name);
-                    document.getElementById('newDishInput').value = '';
-                    renderAll();
-                }
-            });
-
-            // Interactief keuzes koppelen
-            document.getElementById('addChoiceBtn').addEventListener('click', () => {
-                const person = document.getElementById('prefPersonSelect').value;
-                const dish = document.getElementById('prefDishSelect').value;
-                if (!person || !dish) return;
-
-                if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
-                if (!state.choices[state.activeMeal][person]) state.choices[state.activeMeal][person] = [];
-                
-                if (!state.choices[state.activeMeal][person].includes(dish)) {
-                    state.choices[state.activeMeal][person].push(dish);
-                    renderAll();
-                }
-            });
-
-            // Rekenen aanroepen richting de WASM module
-            document.getElementById('calcBtn').addEventListener('click', () => {
-                const currentMealChoices = state.choices[state.activeMeal] || {};
-                
-                let simulatedFileContent = "";
-                for (const person of state.persons) {
-                    const chosen = currentMealChoices[person] || [];
-                    if (chosen.length > 0) {
-                        simulatedFileContent += `${person}: ${chosen.join(', ')}\n`;
-                    } else {
-                        simulatedFileContent += `${person}:\n`;
-                    }
-                }
-
-                const p = parseInt(document.getElementById('pInput').value) || 2;
-                const mode = document.getElementById('modeInput').value;
-                
-                const result = select_dishes(simulatedFileContent, p, mode);
-                document.getElementById('output').textContent = result;
+            beschikbareMaaltijden.forEach(maaltijd => {
+                const knop = document.createElement('button');
+                knop.innerText = maaltijd.naam;
+                knop.setAttribute('data-id', maaltijd.id);
+                knop.onclick = () => activeerMaaltijd(knop, maaltijd.naam, maaltijd.id);
+                knoppenContainer.appendChild(knop);
             });
         }
 
-        // Render UI functies om dropdowns en lijsten synchroon te houden
-        function renderAll() {
-            const mealSelect = document.getElementById('mealSelect');
-            mealSelect.innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
+        // 3. Logica wanneer er op een specifieke maaltijd wordt geklikt
+        function activeerMaaltijd(geselecteerdeKnop, maaltijdNaam, maaltijdId) {
+            // Update actieve status van de knoppen (visueel)
+            document.querySelectorAll('#maaltijd-knoppen button').forEach(btn => btn.classList.remove('active'));
+            geselecteerdeKnop.classList.add('active');
 
-            document.getElementById('personsChips').innerHTML = state.persons.map(p => `<div class="chip">${p}<span class="remove" onclick="removePerson('${p}')">×</span></div>`).join('');
-            document.getElementById('dishesChips').innerHTML = state.dishes.map(d => `<div class="chip">${d}<span class="remove" onclick="removeDish('${d}')">×</span></div>`).join('');
+            // FIX: Maak de UI-tekst direct specifiek voor de gekozen maaltijd
+            const titelElement = document.getElementById('voorkeuren-titel');
+            titelElement.innerText = `Voorkeuren koppelen voor ${maaltijdNaam}`;
 
-            document.getElementById('prefPersonSelect').innerHTML = '<option value="">-- Kies Persoon --</option>' + state.persons.map(p => `<option value="${p}">${p}</option>`).join('');
-            document.getElementById('prefDishSelect').innerHTML = '<option value="">-- Kies Gerecht --</option>' + state.dishes.map(d => `<option value="${d}">${d}</option>`).join('');
+            // Toon de voorheen verborgen voorkeurenkaart
+            document.getElementById('voorkeuren-sectie').classList.remove('hidden');
 
-            const container = document.getElementById('activeChoicesContainer');
-            container.innerHTML = '';
-            const currentMealChoices = state.choices[state.activeMeal] || {};
-
-            let hasChoices = false;
-            for (const person in currentMealChoices) {
-                const items = currentMealChoices[person] || [];
-                if (items.length > 0) {
-                    hasChoices = true;
-                    container.innerHTML += `
-                        <div class="choice-item">
-                            <span><strong>${person}:</strong> ${items.join(', ')}</span>
-                            <button onclick="clearPersonChoices('${person}')">Wis</button>
-                        </div>
-                    `;
-                }
-            }
-            if (!hasChoices) container.innerHTML = '<div style="color:#8e8e93; font-size:14px; margin-top:5px;">Nog geen gekoppelde gerechten voor deze maaltijd.</div>';
+            // Filter en vul de dropdown met gerechten die bij deze maaltijd horen
+            vulGerechtenDropdown(maaltijdId);
         }
 
-        // Expose functies aan venster om onclick in strings te laten werken
-        window.removePerson = (name) => {
-            state.persons = state.persons.filter(p => p !== name);
-            for (const m in state.choices) if (state.choices[m][name]) delete state.choices[m][name];
-            renderAll();
-        };
-        window.removeDish = (name) => {
-            state.dishes = state.dishes.filter(d => d !== name);
-            for (const m in state.choices) {
-                for (const p in state.choices[m]) {
-                    state.choices[m][p] = state.choices[m][p].filter(d => d !== name);
-                }
-            }
-            renderAll();
-        };
-        window.clearPersonChoices = (name) => {
-            if (state.choices[state.activeMeal] && state.choices[state.activeMeal][name]) {
-                delete state.choices[state.activeMeal][name];
-            }
-            renderAll();
-        };
+        // 4. Filter de globale database op basis van de geselecteerde maaltijd
+        function vulGerechtenDropdown(maaltijdId) {
+            const dropdown = document.getElementById('gerechten-dropdown');
+            dropdown.innerHTML = ''; // Maak de lijst leeg
 
-        run();
+            // Filter gerechten waarbij het maaltijdId voorkomt in hun 'geschikt_voor' array
+            const gefilterdeGerechten = globaleGerechtenDatabase.filter(gerecht => 
+                gerecht.geschikt_voor.includes(maaltijdId)
+            );
+
+            if(gefilterdeGerechten.length === 0) {
+                const optie = document.createElement('option');
+                optie.text = "-- Geen gerechten beschikbaar voor deze maaltijd --";
+                dropdown.appendChild(optie);
+                return;
+            }
+
+            // Voeg de gefilterde gerechten toe aan de dropdown
+            gefilterdeGerechten.forEach(gerecht => {
+                const optie = document.createElement('option');
+                optie.value = gerecht.id;
+                optie.text = gerecht.naam;
+                dropdown.appendChild(optie);
+            });
+        }
+
+        // Start de initialisatie zodra de pagina geladen is
+        window.onload = initialiseerUI;
     </script>
 </body>
 </html>
