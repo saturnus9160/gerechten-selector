@@ -1,0 +1,7 @@
+[
+    { "id": "za_mi", "naam": "Lunch zaterdag" },
+    { "id": "za_bites", "naam": "Bites avondmaal zaterdag"},
+    { "id": "za_st", "naam": "Starters avondmaal zaterdag"},
+    { "id": "main", "naam": "Main avondmaal zaterdag"},
+    { "id": "zo_mi", "naam": "Lunch zondag" }
+]
