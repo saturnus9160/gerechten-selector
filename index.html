@@ -21,6 +21,7 @@
         }
         .btn-group {
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
             margin-top: 10px;
         }
@@ -30,7 +31,7 @@
             background-color: #fff;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.2s;
         }
         button.active {
@@ -59,19 +60,18 @@
     <div class="card">
         <h3>1. Selecteer een maaltijd</h3>
         <div id="maaltijd-knoppen" class="btn-group">
-            <!-- Deze knoppen worden automatisch ingeladen via maaltijden.json -->
-            <p>Maaltijden worden geladen...</p>
+            <!-- Knoppen worden geladen via JavaScript -->
         </div>
     </div>
 
     <!-- STAP 2: Voorkeuren Koppelen (Wordt pas actief na selectie) -->
     <div id="voorkeuren-sectie" class="card hidden">
-        <!-- De tekst hier verandert dynamisch mee met de gekozen maaltijd -->
+        <!-- De tekst verandert dynamisch mee met de gekozen maaltijd -->
         <h3 id="voorkeuren-titel">Voorkeuren koppelen voor Huidige Maaltijd</h3>
         
         <label for="gerechten-dropdown">Beschikbare gerechten voor deze maaltijd:</label>
         <select id="gerechten-dropdown">
-            <!-- Dit wordt gefilterd en gevuld op basis van gerechten.json -->
+            <!-- Wordt dynamisch gefilterd -->
         </select>
 
         <label style="display:block; margin-top: 15px;" for="opmerking">Specifieke voorkeur / Opmerking:</label>
@@ -79,33 +79,50 @@
     </div>
 
     <script>
-        // Globale variabelen om de data in te bewaren na het inlezen van de bestanden
-        let beschikbareMaaltijden = [];
-        let globaleGerechtenDatabase = [];
+        // GEGEVENS DIRECT INGEBOUWD (Geen losse JSON-bestanden meer nodig)
+        const beschikbareMaaltijden = [
+            { "id": "za_mi", "naam": "Lunch zaterdag" },
+            { "id": "za_bites", "naam": "Bites avondmaal zaterdag" },
+            { "id": "za_st", "naam": "Starters avondmaal zaterdag" },
+            { "id": "main", "naam": "Main avondmaal zaterdag" },
+            { "id": "zo_mi", "naam": "Lunch zondag" }
+        ];
 
-        // 1. Initialiseer de UI door de JSON-bestanden in te laden
-        async function initialiseerUI() {
-            try {
-                // Haal de maaltijd-typen op (Ontbijt, Lunch, Diner)
-                const maaltijdResponse = await fetch('maaltijden.json');
-                beschikbareMaaltijden = await maaltijdResponse.json();
+        const globaleGerechtenDatabase = [
+            { "id": 1, "naam": "Garnaal kroketten", "geschikt_voor": ["za_mi"] },
+            { "id": 2, "naam": "Salade gerookte zalm", "geschikt_voor": ["za_mi"] },
+            { "id": 3, "naam": "Rund carpatio", "geschikt_voor": ["za_mi"] },
+            { "id": 4, "naam": "Salade tonijn", "geschikt_voor": ["za_mi"] },
+            { "id": 5, "naam": "Linguini scampi", "geschikt_voor": ["za_mi"] },
+            { "id": 6, "naam": "Linguini vongole", "geschikt_voor": ["za_mi"] },
+            { "id": 7, "naam": "Rigatone met kip", "geschikt_voor": ["za_mi"] },
+            { "id": 8, "naam": "Vegetarische pasta", "geschikt_voor": ["za_mi"] },
+            { "id": 9, "naam": "Yakitori", "geschikt_voor": ["za_bites"] },
+            { "id": 10, "naam": "Mosselkroket", "geschikt_voor": ["za_bites"] },
+            { "id": 11, "naam": "Oester", "geschikt_voor": ["za_bites"] },
+            { "id": 12, "naam": "Pastrami", "geschikt_voor": ["za_bites"] },
+            { "id": 13, "naam": "Tom Kha Kai", "geschikt_voor": ["za_st"] },
+            { "id": 14, "naam": "Papillon", "geschikt_voor": ["za_st"] },
+            { "id": 15, "naam": "Mi-cuit zalm", "geschikt_voor": ["za_st"] },
+            { "id": 16, "naam": "Pulpo", "geschikt_voor": ["za_st"] },
+            { "id": 17, "naam": "Pinsa", "geschikt_voor": ["za_st"] },
+            { "id": 18, "naam": "Ravioli", "geschikt_voor": ["main"] },
+            { "id": 19, "naam": "Eendenborst", "geschikt_voor": ["main"] },
+            { "id": 20, "naam": "Pluma Iberico", "geschikt_voor": ["main"] },
+            { "id": 21, "naam": "Vissoep", "geschikt_voor": ["zo_mi"] },
+            { "id": 22, "naam": "Lasagne", "geschikt_voor": ["zo_mi"] },
+            { "id": 23, "naam": "Croque Boem Boem", "geschikt_voor": ["zo_mi"] },
+            { "id": 24, "naam": "Croque Monsieur", "geschikt_voor": ["zo_mi"] },
+            { "id": 25, "naam": "Caprese", "geschikt_voor": ["zo_mi"] },
+            { "id": 26, "naam": "Spaghetti", "geschikt_voor": ["zo_mi"] },
+            { "id": 27, "naam": "Macaroni", "geschikt_voor": ["zo_mi"] },
+            { "id": 28, "naam": "Quiche dag", "geschikt_voor": ["zo_mi"] }
+        ];
 
-                // Haal de globale gerechtenlijst op
-                const gerechtenResponse = await fetch('gerechten.json');
-                globaleGerechtenDatabase = await gerechtenResponse.json();
-
-                // Bouw de knoppen in de UI
-                bouwMaaltijdKnoppen();
-            } catch (error) {
-                console.error("Fout bij het initialiseren van de UI bestanden:", error);
-                document.getElementById('maaltijd-knoppen').innerHTML = "<p style='color:red;'>Fout bij het laden van configuratiebestanden.</p>";
-            }
-        }
-
-        // 2. Maak de knoppen aan op basis van het maaltijden.json bestand
-        function bouwMaaltijdKnoppen() {
+        // Bouw de knoppen direct op bij het laden van de pagina
+        function initialiseerUI() {
             const knoppenContainer = document.getElementById('maaltijd-knoppen');
-            knoppenContainer.innerHTML = ''; // Maak leeg
+            koppenContainer.innerHTML = ''; 
 
             beschikbareMaaltijden.forEach(maaltijd => {
                 const knop = document.createElement('button');
@@ -116,51 +133,29 @@
             });
         }
 
-        // 3. Logica wanneer er op een specifieke maaltijd wordt geklikt
+        // Activeer maaltijd en pas de UI-teksten aan
         function activeerMaaltijd(geselecteerdeKnop, maaltijdNaam, maaltijdId) {
-            // Update actieve status van de knoppen (visueel)
             document.querySelectorAll('#maaltijd-knoppen button').forEach(btn => btn.classList.remove('active'));
             geselecteerdeKnop.classList.add('active');
 
-            // FIX: Maak de UI-tekst direct specifiek voor de gekozen maaltijd
+            // De titel verandert nu direct mee met je exacte maaltijdnamen
             const titelElement = document.getElementById('voorkeuren-titel');
             titelElement.innerText = `Voorkeuren koppelen voor ${maaltijdNaam}`;
 
-            // Toon de voorheen verborgen voorkeurenkaart
             document.getElementById('voorkeuren-sectie').classList.remove('hidden');
 
-            // Filter en vul de dropdown met gerechten die bij deze maaltijd horen
             vulGerechtenDropdown(maaltijdId);
         }
 
-        // 4. Filter de globale database op basis van de geselecteerde maaltijd
+        // Filter de gerechten
         function vulGerechtenDropdown(maaltijdId) {
             const dropdown = document.getElementById('gerechten-dropdown');
-            dropdown.innerHTML = ''; // Maak de lijst leeg
+            dropdown.innerHTML = ''; 
 
-            // Filter gerechten waarbij het maaltijdId voorkomt in hun 'geschikt_voor' array
             const gefilterdeGerechten = globaleGerechtenDatabase.filter(gerecht => 
                 gerecht.geschikt_voor.includes(maaltijdId)
             );
 
-            if(gefilterdeGerechten.length === 0) {
-                const optie = document.createElement('option');
-                optie.text = "-- Geen gerechten beschikbaar voor deze maaltijd --";
-                dropdown.appendChild(optie);
-                return;
-            }
-
-            // Voeg de gefilterde gerechten toe aan de dropdown
             gefilterdeGerechten.forEach(gerecht => {
                 const optie = document.createElement('option');
-                optie.value = gerecht.id;
-                optie.text = gerecht.naam;
-                dropdown.appendChild(optie);
-            });
-        }
-
-        // Start de initialisatie zodra de pagina geladen is
-        window.onload = initialiseerUI;
-    </script>
-</body>
-</html>
+                optie.value = ...
