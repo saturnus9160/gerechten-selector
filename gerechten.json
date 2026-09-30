@@ -26,5 +26,5 @@
     { "id":25, "naam": "Caprese", "geschikt_voor": ["zo_mi"] },
     { "id":26, "naam": "Spaghetti", "geschikt_voor": ["zo_mi"] },
     { "id":27, "naam": "Macaroni", "geschikt_voor": ["zo_mi"] },
-    { "id":27, "naam": "Quiche dag", "geschikt_voor": ["zo_mi"] },	
+    { "id":28, "naam": "Quiche dag", "geschikt_voor": ["zo_mi"] }	
 ]
