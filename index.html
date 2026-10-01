@@ -3,208 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menukaart Optimalisatie</title>
+    <title>Gerechten Selector Pro</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .btn-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-        button { padding: 10px 20px; border: 1px solid #ccc; background-color: #fff; border-radius: 4px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
-        button.active { background-color: #007bff; color: white; border-color: #0056b3; }
-        select, input[type="number"] { width: 100%; padding: 10px; margin-top: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
-        .hidden { display: none; }
-        .calc-btn { background-color: #28a745; color: white; border-color: #1e7e34; width: 100%; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        .calc-btn:hover { background-color: #218838; }
-        .result-box { background-color: #e9ecef; padding: 15px; border-radius: 4px; margin-top: 15px; font-family: monospace; white-space: pre-wrap; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; max-width: 650px; margin: 0 auto; background: #f5f5f7; color: #1d1d1f; }
+        h1 { font-size: 24px; text-align: center; color: #ff3b30; margin-bottom: 20px; }
+        .card { background: white; padding: 16px; border-radius: 12px; border: 1px solid #e5e5ea; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card-title { font-weight: bold; font-size: 16px; margin-bottom: 12px; color: #007aff; border-bottom: 1px solid #f2f2f7; padding-bottom: 6px; }
+        label { font-weight: 600; display: block; margin-top: 10px; font-size: 14px; }
+        select, input, button { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #d2d2d7; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        .row { display: flex; gap: 10px; margin-top: 5px; }
+        .row input, .row select { margin-top: 0; }
+        .row button { margin-top: 0; width: auto; white-space: nowrap; background: #34c759; color: white; border: none; }
+        button.primary { background: #007aff; color: white; border: none; font-size: 16px; font-weight: bold; margin-top: 15px; }
+        button:active { opacity: 0.8; }
+        .chip-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 20px; }
+        .chip { background: #e5e5ea; padding: 6px 12px; border-radius: 20px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+        .chip .remove { color: #ff3b30; font-weight: bold; cursor: pointer; padding: 0 2px; }
+        .choice-item { background: #f2f2f7; padding: 8px 12px; border-radius: 8px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        .choice-item button { width: auto; padding: 4px 8px; font-size: 12px; background: #ff3b30; color: white; border: none; margin: 0; }
+        pre { background: #1c1c1e; color: #30d158; padding: 15px; border-radius: 10px; white-space: pre-wrap; font-family: monospace; font-size: 13px; margin-top: 15px; overflow-x: auto; }
     </style>
 </head>
 <body>
 
-    <h1>Menukaart Optimalisatie & Selectie</h1>
+    <h1>🍽️ Gerechten Selector</h1>
 
-    <!-- STAP 1: Maaltijd Selectie -->
+    <!-- CARD 1: MAALTIJD SELECTIE & IMPORT -->
     <div class="card">
-        <h3>1. Selecteer een maaltijd</h3>
-        <div id="maaltijd-knoppen" class="btn-group"></div>
+        <div class="card-title">1. Selecteer Maaltijd & Laad Desktop Bestand</div>
+        <select id="mealSelect"></select>
+        <div class="row" style="margin-top: 10px;">
+            <input type="text" id="newMealInput" placeholder="Nieuwe maaltijdnaam...">
+            <button id="addMealBtn">Voeg Toe</button>
+        </div>
+        
+        <label style="margin-top: 15px; color: #ff3b30;">Laad .txt keuzeband voor actieve maaltijd:</label>
+        <input type="file" id="fileInput" accept=".txt">
     </div>
 
-    <!-- STAP 2: Optimalisatie Parameters -->
-    <div id="optimalisatie-sectie" class="card hidden">
-        <h3 id="voorkeuren-titel">Gerechten selecteren voor Huidige Maaltijd</h3>
-        
-        <label for="max-gerechten">Maximum aantal unieke gerechten op de kaart:</label>
-        <input type="number" id="max-gerechten" value="2" min="1">
+    <!-- CARD 2: DATABASE OVERZICHT -->
+    <div class="card">
+        <div class="card-title">2. Globale Database (Gecumuleerd)</div>
+        <label>Geregistreerde Personen:</label>
+        <div class="row">
+            <input type="text" id="newPersonInput" placeholder="Naam toevoegen...">
+            <button id="addPersonBtn">Voeg Toe</button>
+        </div>
+        <div class="chip-container" id="personsChips"></div>
 
-        <label for="selectie-methode">Kies de selectiemethode voor personen:</label>
-        <select id="selectie-methode">
-            <option value="max">MAX (Maximaliseer het aantal blije mensen)</option>
-            <option value="fair">FAIR (Verdeel de keuzes zo eerlijk mogelijk over personen)</option>
-            <option value="popular">POPULAR (Kies puur de meest gekozen gerechten)</option>
-            <option value="opt">OPT (Wiskundig optimum op basis van scores/voorkeuren)</option>
+        <label style="margin-top: 15px;">Beschikbare Gerechten:</label>
+        <div class="row">
+            <input type="text" id="newDishInput" placeholder="Gerecht toevoegen...">
+            <button id="addDishBtn">Voeg Toe</button>
+        </div>
+        <div class="chip-container" id="dishesChips"></div>
+    </div>
+
+    <!-- CARD 3: INTERACTIEVE KEUZES MAPPEN -->
+    <div class="card">
+        <div class="card-title">3. Handmatige Aanpassingen voor Huidige Maaltijd</div>
+        <div class="row">
+            <select id="prefPersonSelect"><option value="">-- Kies Persoon --</option></select>
+            <select id="prefDishSelect"><option value="">-- Kies Gerecht --</option></select>
+            <button id="addChoiceBtn" style="background: #007aff;">Koppel</button>
+        </div>
+        
+        <label style="margin-top: 15px;">Geladen koppelingen voor deze maaltijd:</label>
+        <div id="activeChoicesContainer"></div>
+    </div>
+
+    <!-- CARD 4: REKENEN -->
+    <div class="card">
+        <div class="card-title">4. Optimalisatie Parameters</div>
+        <label for="pInput">Maximaal aantal gerechten in totaal (P):</label>
+        <input type="number" id="pInput" value="2" min="1">
+
+        <label for="modeInput" style="margin-top: 10px;">Strategie:</label>
+        <select id="modeInput">
+            <option value="opt">Optimaal (Vergelijk alle modi)</option>
+            <option value="max">Max (Unieke personen)</option>
+            <option value="fair">Fair (Eerlijke verdeling)</option>
+            <option value="popular">Populariteit (Meeste stemmen)</option>
         </select>
 
-        <button class="calc-btn" onclick="berekenOptimaleMenukaart()">Bereken Optimale Menukaart</button>
-
-        <div id="resultaat-container" class="hidden">
-            <label>Resultaat:</label>
-            <div id="resultaat-weergave" class="result-box"></div>
-        </div>
+        <button id="calcBtn" class="primary">Bereken Groepsmenu</button>
     </div>
 
-    <script>
-        // 1. DATA: De beschikbare maaltijden
-        const beschikbareMaaltijden = [
-            { "id": "za_mi", "naam": "Lunch zaterdag" },
-            { "id": "za_bites", "naam": "Bites avondmaal zaterdag" },
-            { "id": "za_st", "naam": "Starters avondmaal zaterdag" },
-            { "id": "main", "naam": "Main avondmaal zaterdag" },
-            { "id": "zo_mi", "naam": "Lunch zondag" }
-        ];
+    <label style="font-weight: bold; margin-left: 5px;">📊 Uitvoer Analyse:</label>
+    <pre id="output">Laad een bestand of voeg handmatig gegevens toe...</pre>
 
-        // 2. DATA: De globale gerechten database
-        const globaleGerechtenDatabase = [
-            { "id": 1, "naam": "Garnaal kroketten", "geschikt_voor": ["za_mi"] },
-            { "id": 2, "naam": "Salade gerookte zalm", "geschikt_voor": ["za_mi"] },
-            { "id": 3, "naam": "Rund carpatio", "geschikt_voor": ["za_mi"] },
-            { "id": 4, "naam": "Salade tonijn", "geschikt_voor": ["za_mi"] },
-            { "id": 5, "naam": "Linguini scampi", "geschikt_voor": ["za_mi"] },
-            { "id": 6, "naam": "Linguini vongole", "geschikt_voor": ["za_mi"] },
-            { "id": 7, "naam": "Rigatone met kip", "geschikt_voor": ["za_mi"] },
-            { "id": 8, "naam": "Vegetarische pasta", "geschikt_voor": ["za_mi"] },
-            { "id": 9, "naam": "Yakitori", "geschikt_voor": ["za_bites"] },
-            { "id": 10, "naam": "Mosselkroket", "geschikt_voor": ["za_bites"] },
-            { "id": 11, "naam": "Oester", "geschikt_voor": ["za_bites"] },
-            { "id": 12, "naam": "Pastrami", "geschikt_voor": ["za_bites"] },
-            { "id": 13, "naam": "Tom Kha Kai", "geschikt_voor": ["za_st"] },
-            { "id": 14, "naam": "Papillon", "geschikt_voor": ["za_st"] },
-            { "id": 15, "naam": "Mi-cuit zalm", "geschikt_voor": ["za_st"] },
-            { "id": 16, "naam": "Pulpo", "geschikt_voor": ["za_st"] },
-            { "id": 17, "naam": "Pinsa", "geschikt_voor": ["za_st"] },
-            { "id": 18, "naam": "Ravioli", "geschikt_voor": ["main"] },
-            { "id": 19, "naam": "Eendenborst", "geschikt_voor": ["main"] },
-            { "id": 20, "naam": "Pluma Iberico", "geschikt_voor": ["main"] },
-            { "id": 21, "naam": "Vissoep", "geschikt_voor": ["zo_mi"] },
-            { "id": 22, "naam": "Lasagne", "geschikt_voor": ["zo_mi"] },
-            { "id": 23, "naam": "Croque Boem Boem", "geschikt_voor": ["zo_mi"] },
-            { "id": 24, "naam": "Croque Monsieur", "geschikt_voor": ["zo_mi"] },
-            { "id": 25, "naam": "Caprese", "geschikt_voor": ["zo_mi"] },
-            { "id": 26, "naam": "Spaghetti", "geschikt_voor": ["zo_mi"] },
-            { "id": 27, "naam": "Macaroni", "geschikt_voor": ["zo_mi"] },
-            { "id": 28, "naam": "Quiche dag", "geschikt_voor": ["zo_mi"] }
-        ];
+    <script type="module">
+        import init, { select_dishes } from './pkg/gerechten_selector_web.js';
 
-        // 3. DATA: Koppeling van personen en hun gekozen gerechten per maaltijd
-        const personenKeuzes = [
-            { "persoon": "An", "maaltijd_id": "za_mi", "gerecht_id": 1, "voorkeur_score": 3 },
-            { "persoon": "An", "maaltijd_id": "za_mi", "gerecht_id": 2, "voorkeur_score": 1 },
-            { "persoon": "Bart", "maaltijd_id": "za_mi", "gerecht_id": 2, "voorkeur_score": 3 },
-            { "persoon": "Bart", "maaltijd_id": "za_mi", "gerecht_id": 3, "voorkeur_score": 2 },
-            { "persoon": "Chris", "maaltijd_id": "za_mi", "gerecht_id": 1, "voorkeur_score": 3 },
-            { "persoon": "Chris", "maaltijd_id": "za_mi", "gerecht_id": 4, "voorkeur_score": 2 },
-            { "persoon": "An", "maaltijd_id": "zo_mi", "gerecht_id": 22, "voorkeur_score": 3 },
-            { "persoon": "Bart", "maaltijd_id": "zo_mi", "gerecht_id": 26, "voorkeur_score": 3 }
-        ];
+        // Schone, flexibele state zonder hardcoded personen en gerechten
+        let state = {
+            meals: ["Zaterdag Bites", "Zaterdag Main", "Zaterdag Dessert"],
+            activeMeal: "Zaterdag Bites",
+            persons: [],
+            dishes: [],
+            choices: {} // Wordt dynamisch gevuld per maaltijd: choices[maaltijd][persoon] = [gerechten]
+        };
 
-        let geselecteerdeMaaltijdId = "";
-        // UI initialiseren en knoppen bouwen
-        function idInitialiseerUI() {
-            const knoppenContainer = document.getElementById('maaltijd-knoppen');
-            knoppenContainer.innerHTML = ''; 
-            beschikbareMaaltijden.forEach(maaltijd => {
-                const knop = document.createElement('button');
-                knop.innerText = maaltijd.naam;
-                knop.onclick = () => activeerMaaltijd(knop, maaltijd.naam, maaltijd.id);
-                knoppenContainer.appendChild(knop);
-            });
-        }
+        async function run() {
+            await init();
+            renderAll();
 
-        function activeerMaaltijd(geselecteerdeKnop, maaltijdNaam, maaltijdId) {
-            geselecteerdeMaaltijdId = maaltijdId;
-            document.querySelectorAll('#maaltijd-knoppen button').forEach(btn => btn.classList.remove('active'));
-            geselecteerdeKnop.classList.add('active');
+            // Bestandsinvoer lezer (Zelfde logica als desktopversie)
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            document.getElementById('voorkeuren-titel').innerText = `Gerechten selecteren voor ${maaltijdNaam}`;
-            document.getElementById('optimalisatie-sectie').classList.remove('hidden');
-            document.getElementById('resultaat-container').classList.add('hidden');
-        }
-
-        // De rekenalgoritmes
-        function berekenOptimaleMenukaart() {
-            const maxGerechten = parseInt(document.getElementById('max-gerechten').value);
-            const methode = document.getElementById('selectie-methode').value;
-
-            const relevanteKeuzes = personenKeuzes.filter(k => k.maaltijd_id === geselecteerdeMaaltijdId);
-            
-            if (relevanteKeuzes.length === 0) {
-                toonResultaat("Geen keuzes van personen gevonden voor deze maaltijd.");
-                return;
-            }
-
-            let gerechtStatistieken = {};
-            relevanteKeuzes.forEach(k => {
-                if (!gerechtStatistieken[k.gerecht_id]) {
-                    gerechtStatistieken[k.gerecht_id] = { id: k.gerecht_id, stemmen: 0, totale_score: 0, gekozen_door: [] };
-                }
-                gerechtStatistieken[k.gerecht_id].stemmen += 1;
-                gerechtStatistieken[k.gerecht_id].totale_score += k.voorkeur_score;
-                if (!gerechtStatistieken[k.gerecht_id].gekozen_door.includes(k.persoon)) {
-                    gerechtStatistieken[k.gerecht_id].gekozen_door.push(k.persoon);
-                }
-            });
-
-            let geselecteerdeGerechten = [];
-
-            if (methode === "popular") {
-                geselecteerdeGerechten = Object.values(gerechtStatistieken)
-                    .sort((a, b) => b.stemmen - a.stemmen)
-                    .slice(0, maxGerechten);
-            } 
-            else if (methode === "opt") {
-                geselecteerdeGerechten = Object.values(gerechtStatistieken)
-                    .sort((a, b) => b.totale_score - a.totale_score)
-                    .slice(0, maxGerechten);
-            } 
-            else if (methode === "max") {
-                let resterendeGerechten = Object.values(gerechtStatistieken);
-                let bediendePersonen = new Set();
-                
-                while (geselecteerdeGerechten.length < maxGerechten && resterendeGerechten.length > 0) {
-                    resterendeGerechten.sort((a, b) => {
-                        const nieuwA = a.gekozen_door.filter(p => !bediendePersonen.has(p)).length;
-                        const nieuwB = b.gekozen_door.filter(p => !bediendePersonen.has(p)).length;
-                        return nieuwB - nieuwA;
-                    });
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const lines = evt.target.result.split('\n');
                     
-                    let beste = resterendeGerechten.shift();
-                    beste.gekozen_door.forEach(p => bediendePersonen.add(p));
-                    geselecteerdeGerechten.push(beste);
-                }
-            } 
-            else if (methode === "fair") {
-                geselecteerdeGerechten = Object.values(gerechtStatistieken)
-                    .sort((a, b) => (b.gekozen_door.length * b.totale_score) - (a.gekozen_door.length * a.totale_score))
-                    .slice(0, maxGerechten);
-            }
+                    if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
 
-            weergaveResultaat(geselecteerdeGerechten);
-        }
+                    lines.forEach(line => {
+                        if (line.trim().is_empty || !line.includes(':')) return;
 
-        function weergaveResultaat(gerechten) {
-            let output = `Geselecteerde menukaart (Max limiet toegepast):\n\n`;
-            gerechten.forEach((g, index) => {
-                const gerechtInfo = globaleGerechtenDatabase.find(db => db.id === g.id);
-                const naam = gerechtInfo ? gerechtInfo.naam : `Onbekend gerecht (${g.id})`;
-                output += `${index + 1}. ${naam}\n   -> Gewild door: ${g.gekozen_door.join(', ')} (Stemmen: ${g.stemmen}, Score: ${g.totale_score})\n\n`;
+                        const [personPart, dishesPart] = line.split(':');
+                        const person = personPart.trim();
+                        
+                        // Voeg persoon toe aan globale database indien nieuw
+                        if (person && !state.persons.includes(person)) state.persons.push(person);
+
+                        const loadedDishes = dishesPart.split(',')
+                            .map(s => s.trim())
+                            .filter(s => s.length > 0);
+
+                        // Voeg gerechten toe aan globale database indien nieuw
+                        loadedDishes.forEach(dish => {
+                            if (!state.dishes.includes(dish)) state.dishes.push(dish);
+                        });
+
+                        // Koppel keuzes aan de actieve maaltijd
+                        state.choices[state.activeMeal][person] = loadedDishes;
+                    });
+
+                    // Reset de file input zodat hetzelfde bestand opnieuw gekozen kan worden
+                    e.target.value = '';
+                    renderAll();
+                    document.getElementById('output').textContent = `✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'!`;
+                };
+                reader.readAsText(file);
             });
-            toonResultaat(output);
+
+            // Maaltijdwissel
+            document.getElementById('mealSelect').addEventListener('change', (e) => {
+                state.activeMeal = e.target.value;
+                renderAll();
+            });
+
+            document.getElementById('addMealBtn').addEventListener('click', () => {
+                const name = document.getElementById('newMealInput').value.trim();
+                if (name && !state.meals.includes(name)) {
+                    state.meals.push(name);
+                    state.activeMeal = name;
+                    document.getElementById('newMealInput').value = '';
+                    renderAll();
+                }
+            });
+
+            // Handmatige toevoegingen
+            document.getElementById('addPersonBtn').addEventListener('click', () => {
+                const name = document.getElementById('newPersonInput').value.trim();
+                if (name && !state.persons.includes(name)) {
+                    state.persons.push(name);
+                    document.getElementById('newPersonInput').value = '';
+                    renderAll();
+                }
+            });
+
+            document.getElementById('addDishBtn').addEventListener('click', () => {
+                const name = document.getElementById('newDishInput').value.trim();
+                if (name && !state.dishes.includes(name)) {
+                    state.dishes.push(name);
+                    document.getElementById('newDishInput').value = '';
+                    renderAll();
+                }
+            });
+
+            document.getElementById('addChoiceBtn').addEventListener('click', () => {
+                const person = document.getElementById('prefPersonSelect').value;
+                const dish = document.getElementById('prefDishSelect').value;
+                if (!person || !dish) return;
+
+                if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
+                if (!state.choices[state.activeMeal][person]) state.choices[state.activeMeal][person] = [];
+                
+                if (!state.choices[state.activeMeal][person].includes(dish)) {
+                    state.choices[state.activeMeal][person].push(dish);
+                    renderAll();
+                }
+            });
+
+            // Berekenen knop
+            document.getElementById('calcBtn').addEventListener('click', () => {
+                const currentMealChoices = state.choices[state.activeMeal] || {};
+                let simulatedFileContent = "";
+                
+                for (const person of state.persons) {
+                    const chosen = currentMealChoices[person] || [];
+                    simulatedFileContent += `${person}: ${chosen.join(', ')}\n`;
+                }
+
+                const p = parseInt(document.getElementById('pInput').value) || 2;
+                const mode = document.getElementById('modeInput').value;
+                
+                const result = select_dishes(simulatedFileContent, p, mode);
+                document.getElementById('output').textContent = result;
+            });
         }
 
-        function toonResultaat(tekst) {
-            document.getElementById('resultaat-weergave').innerText = tekst;
-            document.getElementById('resultaat-container').classList.remove('hidden');
+        function renderAll() {
+            document.getElementById('mealSelect').innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
+            document.getElementById('personsChips').innerHTML = state.persons.map(p => `<div class="chip">${p}<span class="remove" onclick="removePerson('${p}')">×</span></div>`).join('');
+            document.getElementById('dishesChips').innerHTML = state.dishes.map(d => `<div class="chip">${d}<span class="remove" onclick="removeDish('${d}')">×</span></div>`).join('');
+            document.getElementById('prefPersonSelect').innerHTML = '<option value="">-- Kies Persoon --</option>' + state.persons.map(p => `<option value="${p}">${p}</option>`).join('');
+            document.getElementById('prefDishSelect').innerHTML = '<option value="">-- Kies Gerecht --</option>' + state.dishes.map(d => `<option value="${d}">${d}</option>`).join('');
+
+            const container = document.getElementById('activeChoicesContainer');
+            container.innerHTML = '';
+            const currentMealChoices = state.choices[state.activeMeal] || {};
+
+            let hasChoices = false;
+            for (const person in currentMealChoices) {
+                const items = currentMealChoices[person] || [];
+                if (items.length > 0) {
+                    hasChoices = true;
+                    container.innerHTML += `
+                        <div class="choice-item">
+                            <span><strong>${person}:</strong> ${items.join(', ')}</span>
+                            <button onclick="clearPersonChoices('${person}')">Wis</button>
+                        </div>
+                    `;
+                }
+            }
+            if (!hasChoices) container.innerHTML = '<div style="color:#8e8e93; font-size:14px; margin-top:5px;">Geen actieve keuzes geladen voor deze maaltijd. Gebruik de bestandskiezer hierboven.</div>';
         }
 
-        window.onload = idInitialiseerUI;
+        window.removePerson = (name) => {
+            state.persons = state.persons.filter(p => p !== name);
+            for (const m in state.choices) if (state.choices[m][name]) delete state.choices[m][name];
+            renderAll();
+        };
+        window.removeDish = (name) => {
+            state.dishes = state.dishes.filter(d => d !== name);
+            for (const m in state.choices) {
+                for (const p in state.choices[m]) {
+                    state.choices[m][p] = state.choices[m][p].filter(d => d !== name);
+                }
+            }
+            renderAll();
+        };
+        window.clearPersonChoices = (name) => {
+            if (state.choices[state.activeMeal] && state.choices[state.activeMeal][name]) {
+                delete state.choices[state.activeMeal][name];
+            }
+            renderAll();
+        };
+
+        run();
     </script>
 </body>
 </html>
