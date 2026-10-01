@@ -37,7 +37,7 @@
             <button id="addMealBtn">Voeg Toe</button>
         </div>
         
-        <label style="margin-top: 15px; color: #ff3b30;">Laad .txt keuzeband voor actieve maaltijd:</label>
+        <label style="margin-top: 15px; color: #ff3b30;">Laad .txt keuzebestand voor actieve maaltijd:</label>
         <input type="file" id="fileInput" accept=".txt">
     </div>
 
@@ -72,7 +72,7 @@
         <div id="activeChoicesContainer"></div>
     </div>
 
-    <!-- CARD 4: REKENEN -->
+    <!-- CARD 4: REKENEN & PARAMETERS -->
     <div class="card">
         <div class="card-title">4. Optimalisatie Parameters</div>
         <label for="pInput">Maximaal aantal gerechten in totaal (P):</label>
@@ -92,29 +92,37 @@
     <label style="font-weight: bold; margin-left: 5px;">📊 Uitvoer Analyse:</label>
     <pre id="output">Laad een bestand of voeg handmatig gegevens toe...</pre>
     
-    <!-- NIEUWE EXPORT KNOP -->
-    <button id="exportBtn" style="background: #5856d6; color: white; border: none; font-size: 16px; font-weight: bold; margin-bottom: 30px; display: none;">💾 Exporteer Resultaat naar TXT</button>
+    <!-- EXPORT KNOP PERMANENT ZICHTBAAR -->
+    <button id="exportBtn" style="background: #5856d6; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; margin-bottom: 30px; width: 100%; cursor: pointer;">💾 Exporteer Resultaat naar TXT</button>
 
     <script type="module">
         import init, { select_dishes } from './pkg/gerechten_selector_web.js';
 
-        // Schone, flexibele state zonder hardcoded personen en gerechten
+        // State Manager met de door jou gevraagde maaltijden
         let state = {
-            meals: ["Zaterdag Bites", "Zaterdag Main", "Zaterdag Dessert"],
-            activeMeal: "Zaterdag Bites",
+            meals: [
+                "Lunch zaterdag", 
+                "Bites avondmaal zaterdag", 
+                "Starters avondmaal zaterdag", 
+                "Main avondmaal zaterdag", 
+                "Lunch zondag"
+            ],
+            activeMeal: "Lunch zaterdag",
             persons: [],
             dishes: [],
             choices: {} // Structuur: choices[maaltijd][persoon] = [gerechten]
         };
 
+        let lastCalculationResult = "";
+
         async function run() {
             await init();
             renderAll();
 
-            // Bestandsinvoer lezer (Zelfde logica als desktopversie)
+            // Bestandsinvoer lezer (foutvrije JavaScript-syntax)
             document.getElementById('fileInput').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
+                const file = e.target.files;
+                if (!file || file.length === 0) return;
 
                 const reader = new FileReader();
                 reader.onload = function(evt) {
@@ -124,29 +132,24 @@
 
                     lines.forEach(line => {
                         const trimmedLine = line.trim();
-                        // Gecorrigeerde JavaScript check voor lege regels
                         if (trimmedLine === "" || !trimmedLine.includes(':')) return;
 
                         const [personPart, dishesPart] = trimmedLine.split(':');
                         const person = personPart.trim();
                         
-                        // Voeg persoon toe aan globale database indien nieuw
                         if (person && !state.persons.includes(person)) state.persons.push(person);
 
                         const loadedDishes = dishesPart.split(',')
                             .map(s => s.trim())
                             .filter(s => s.length > 0);
 
-                        // Voeg gerechten toe aan globale database indien nieuw
                         loadedDishes.forEach(dish => {
                             if (!state.dishes.includes(dish)) state.dishes.push(dish);
                         });
 
-                        // Koppel keuzes aan de actieve maaltijd
                         state.choices[state.activeMeal][person] = loadedDishes;
                     });
 
-                    // Reset de file input zodat hetzelfde bestand opnieuw gekozen kan worden
                     e.target.value = '';
                     renderAll();
                     document.getElementById('output').textContent = `✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'!`;
@@ -160,6 +163,7 @@
                 renderAll();
             });
 
+            // Handmatig maaltijd toevoegen
             document.getElementById('addMealBtn').addEventListener('click', () => {
                 const name = document.getElementById('newMealInput').value.trim();
                 if (name && !state.meals.includes(name)) {
@@ -170,7 +174,7 @@
                 }
             });
 
-            // Handmatige toevoegingen
+            // Handmatig persoon toevoegen
             document.getElementById('addPersonBtn').addEventListener('click', () => {
                 const name = document.getElementById('newPersonInput').value.trim();
                 if (name && !state.persons.includes(name)) {
@@ -180,6 +184,7 @@
                 }
             });
 
+            // Handmatig gerecht toevoegen
             document.getElementById('addDishBtn').addEventListener('click', () => {
                 const name = document.getElementById('newDishInput').value.trim();
                 if (name && !state.dishes.includes(name)) {
@@ -189,6 +194,7 @@
                 }
             });
 
+            // Handmatige koppeling leggen
             document.getElementById('addChoiceBtn').addEventListener('click', () => {
                 const person = document.getElementById('prefPersonSelect').value;
                 const dish = document.getElementById('prefDishSelect').value;
@@ -203,7 +209,7 @@
                 }
             });
 
-            // Berekenen knop
+            // Berekenen knop koppeling met WASM module
             document.getElementById('calcBtn').addEventListener('click', () => {
                 const currentMealChoices = state.choices[state.activeMeal] || {};
                 let simulatedFileContent = "";
@@ -217,10 +223,32 @@
                 const mode = document.getElementById('modeInput').value;
                 
                 const result = select_dishes(simulatedFileContent, p, mode);
+                
+                lastCalculationResult = `Maaltijd: ${state.activeMeal}\n========================================\n` + result;
                 document.getElementById('output').textContent = result;
+            });
+
+            // Universele Export Logica naar TXT bestand
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                if (!lastCalculationResult) {
+                    alert("⚠️ Er is nog geen berekening uitgevoerd om te exporteren. Klik eerst op 'Bereken Groepsmenu'.");
+                    return;
+                }
+
+                const blob = new Blob([lastCalculationResult], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                const safeMealName = state.activeMeal.replace(/[^a-z0-9]/gi, '_');
+                
+                link.download = `resultaat_${safeMealName}.txt`;
+                link.href = URL.createObjectURL(blob);
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             });
         }
 
+        // Interface Synchronisatie
         function renderAll() {
             document.getElementById('mealSelect').innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
             document.getElementById('personsChips').innerHTML = state.persons.map(p => `<div class="chip">${p}<span class="remove" onclick="removePerson('${p}')">×</span></div>`).join('');
@@ -248,6 +276,7 @@
             if (!hasChoices) container.innerHTML = '<div style="color:#8e8e93; font-size:14px; margin-top:5px;">Geen actieve keuzes geladen voor deze maaltijd. Gebruik de bestandskiezer hierboven.</div>';
         }
 
+        // Globale acties voor knoppen
         window.removePerson = (name) => {
             state.persons = state.persons.filter(p => p !== name);
             for (const m in state.choices) if (state.choices[m][name]) delete state.choices[m][name];
