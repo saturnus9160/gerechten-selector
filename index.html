@@ -28,7 +28,7 @@
 <body>
 
     <h1>🍽️ Gerechten Selector</h1>
-    <div class="version-badge">Versie v2.3.1 (Splitsing Fix)</div>
+    <div class="version-badge">Versie v2.3.2 (Fix Chatgpt)</div>
 
     <!-- CARD 1: MAALTIJD SELECTIE & IMPORT -->
     <div class="card">
@@ -115,151 +115,132 @@
 
         let lastCalculationResult = "";
 
-        async function run() {
-            await init();
-            renderAll();
+		async function run() {
 
-            // Bestandsinvoer lezer (Volledig foutloos zonder array-conflicten)
-            document.getElementById('fileInput').addEventListener('change', function(e) {
-                const file = e.target.files;
-                if (!file || file.length === 0) return;
+			// Eerst de gewone interface opbouwen
+			renderAll();
 
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const content = evt.target.result;
-                    const lines = content.split('\n');
-                    
-                    if (!state.choices[state.activeMeal]) {
-                        state.choices[state.activeMeal] = {};
-                    }
+			// Bestandsinvoer werkt onafhankelijk van WASM
+			document.getElementById('fileInput').addEventListener('change', function(e) {
+				const file = e.target.files[0];
 
-                    for (let i = 0; i < lines.length; i++) {
-                        const trimmedLine = lines[i].trim();
-                        if (trimmedLine === "" || !trimmedLine.includes(':')) {
-                            continue;
-                        }
+				if (!file) return;
 
-                        const parts = trimmedLine.split(':');
-                        if (parts.length < 2) {
-                            continue;
-                        }
+				const reader = new FileReader();
 
-                        const extractedPerson = parts[0].trim();
-                        const extractedDishesString = parts[1].trim();
-                        
-                        if (extractedPerson !== "" && !state.persons.includes(extractedPerson)) {
-                            state.persons.push(extractedPerson);
-                        }
+				reader.onload = function(evt) {
+					try {
+						const content = evt.target.result;
+						const lines = content.split(/\r?\n/);
 
-                        const loadedDishes = extractedDishesString.split(',')
-                            .map(s => s.trim())
-                            .filter(s => s.length > 0);
+						if (!state.choices[state.activeMeal]) {
+							state.choices[state.activeMeal] = {};
+						}
 
-                        loadedDishes.forEach(dish => {
-                            if (!state.dishes.includes(dish)) {
-                                state.dishes.push(dish);
-                            }
-                        });
+						let loadedCount = 0;
 
-                        state.choices[state.activeMeal][extractedPerson] = loadedDishes;
-                    }
+						for (const line of lines) {
+							const trimmedLine = line.trim();
 
-                    e.target.value = '';
-                    renderAll();
-                    document.getElementById('output').textContent = `✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'!`;
-                };
-                reader.readAsText(file);
-            });
+							if (!trimmedLine || !trimmedLine.includes(':')) {
+								continue;
+							}
 
-            // Maaltijdwissel listener
-            document.getElementById('mealSelect').addEventListener('change', (e) => {
-                state.activeMeal = e.target.value;
-                renderAll();
-            });
+							// Alleen splitsen op de EERSTE dubbele punt
+							const separatorIndex = trimmedLine.indexOf(':');
 
-            // Knoppen voor handmatige invoer
-            document.getElementById('addMealBtn').addEventListener('click', () => {
-                const name = document.getElementById('newMealInput').value.trim();
-                if (name && !state.meals.includes(name)) {
-                    state.meals.push(name);
-                    state.activeMeal = name;
-                    document.getElementById('newMealInput').value = '';
-                    renderAll();
-                }
-            });
+							const extractedPerson =
+								trimmedLine.substring(0, separatorIndex).trim();
 
-            document.getElementById('addPersonBtn').addEventListener('click', () => {
-                const name = document.getElementById('newPersonInput').value.trim();
-                if (name && !state.persons.includes(name)) {
-                    state.persons.push(name);
-                    document.getElementById('newPersonInput').value = '';
-                    renderAll();
-                }
-            });
+							const extractedDishesString =
+								trimmedLine.substring(separatorIndex + 1).trim();
 
-            document.getElementById('addDishBtn').addEventListener('click', () => {
-                const name = document.getElementById('newDishInput').value.trim();
-                if (name && !state.dishes.includes(name)) {
-                    state.dishes.push(name);
-                    document.getElementById('newDishInput').value = '';
-                    renderAll();
-                }
-            });
+							if (!extractedPerson) {
+								continue;
+							}
 
-            document.getElementById('addChoiceBtn').addEventListener('click', () => {
-                const person = document.getElementById('prefPersonSelect').value;
-                const dish = document.getElementById('prefDishSelect').value;
-                if (!person || !dish) return;
+							// Persoon toevoegen aan globale database
+							if (!state.persons.includes(extractedPerson)) {
+								state.persons.push(extractedPerson);
+							}
 
-                if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
-                if (!state.choices[state.activeMeal][person]) state.choices[state.activeMeal][person] = [];
-                
-                if (!state.choices[state.activeMeal][person].includes(dish)) {
-                    state.choices[state.activeMeal][person].push(dish);
-                    renderAll();
-                }
-            });
+							// Gerechten uitlezen
+							const loadedDishes = extractedDishesString
+								.split(',')
+								.map(s => s.trim())
+								.filter(s => s.length > 0);
 
-            // Berekenen knop logica richting WASM
-            document.getElementById('calcBtn').addEventListener('click', () => {
-                const currentMealChoices = state.choices[state.activeMeal] || {};
-                let simulatedFileContent = "";
-                
-                for (let i = 0; i < state.persons.length; i++) {
-                    const person = state.persons[i];
-                    const chosen = currentMealChoices[person] || [];
-                    simulatedFileContent += person + ": " + chosen.join(', ') + "\n";
-                }
+							// Gerechten toevoegen aan globale database
+							loadedDishes.forEach(dish => {
+								if (!state.dishes.includes(dish)) {
+									state.dishes.push(dish);
+								}
+							});
 
-                const p = parseInt(document.getElementById('pInput').value) || 2;
-                const mode = document.getElementById('modeInput').value;
-                
-                const result = select_dishes(simulatedFileContent, p, mode);
-                
-                lastCalculationResult = `Maaltijd: ${state.activeMeal}\n========================================\n` + result;
-                document.getElementById('output').textContent = result;
-            });
+							// Keuzes opslaan voor huidige maaltijd
+							state.choices[state.activeMeal][extractedPerson] =
+								loadedDishes;
 
-            // Universele Export naar TXT
-            document.getElementById('exportBtn').addEventListener('click', () => {
-                if (!lastCalculationResult) {
-                    alert("⚠️ Er is nog geen berekening uitgevoerd om te exporteren. Klik eerst op 'Bereken Groepsmenu'.");
-                    return;
-                }
+							loadedCount++;
+						}
 
-                const blob = new Blob([lastCalculationResult], { type: 'text/plain;charset=utf-8' });
-                const link = document.createElement('a');
-                const safeMealName = state.activeMeal.replace(/[^a-z0-9]/gi, '_');
-                
-                link.download = `resultaat_${safeMealName}.txt`;
-                link.href = URL.createObjectURL(blob);
-                
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            });
-        }
+						// File input resetten zodat hetzelfde bestand opnieuw
+						// geselecteerd kan worden
+						e.target.value = '';
 
+						renderAll();
+
+						document.getElementById('output').textContent =
+							`✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'.\n` +
+							`${loadedCount} personen verwerkt.`;
+
+					} catch (error) {
+						console.error("Fout bij verwerken bestand:", error);
+
+						document.getElementById('output').textContent =
+							`❌ Fout bij verwerken van '${file.name}': ${error.message}`;
+
+						e.target.value = '';
+					}
+				};
+
+				reader.onerror = function() {
+					document.getElementById('output').textContent =
+						`❌ Het bestand '${file.name}' kon niet worden gelezen.`;
+
+					e.target.value = '';
+				};
+
+				reader.readAsText(file, 'UTF-8');
+			});
+
+
+			// WASM afzonderlijk initialiseren
+			try {
+				await init();
+
+				console.log("WASM succesvol geladen.");
+
+				document.getElementById('output').textContent =
+					"✅ Klaar. Bestand kan worden geladen.";
+
+			} catch (error) {
+				console.error("WASM initialisatie mislukt:", error);
+
+				document.getElementById('output').textContent =
+					"⚠️ Bestandsinvoer werkt, maar de rekenmodule kon niet worden geladen.\n\n" +
+					"Controleer of de map 'pkg' naast index.html staat.\n\n" +
+					`Technische fout: ${error.message}`;
+			}
+
+
+			// Maaltijdwissel listener
+			document.getElementById('mealSelect').addEventListener('change', (e) => {
+				state.activeMeal = e.target.value;
+				renderAll();
+			});
+		}
+		
         // Dropdowns en overzichten up-to-date houden
         function renderAll() {
             document.getElementById('mealSelect').innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
