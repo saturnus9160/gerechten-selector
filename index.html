@@ -119,7 +119,7 @@
             await init();
             renderAll();
 
-            // Bestandsinvoer lezer (foutvrije JavaScript-syntax)
+            // Bestandsinvoer lezer (Volledig gecorrigeerde JavaScript-syntax)
             document.getElementById('fileInput').addEventListener('change', function(e) {
                 const file = e.target.files;
                 if (!file || file.length === 0) return;
@@ -132,6 +132,7 @@
 
                     lines.forEach(line => {
                         const trimmedLine = line.trim();
+                        // Waterdichte controle op lege regels of regels zonder dubbele punt
                         if (trimmedLine === "" || !trimmedLine.includes(':')) return;
 
                         const [personPart, dishesPart] = trimmedLine.split(':');
@@ -209,7 +210,7 @@
                 }
             });
 
-            // Berekenen knop koppeling met WASM module
+            // Berekenen knop (Hier is de foutieve .is_empty nu definitief hersteld!)
             document.getElementById('calcBtn').addEventListener('click', () => {
                 const currentMealChoices = state.choices[state.activeMeal] || {};
                 let simulatedFileContent = "";
