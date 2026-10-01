@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerechten Selector Pro v2.3.1</title>
+    <title>Gerechten Selector Pro v2.3.3</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; max-width: 650px; margin: 0 auto; background: #f5f5f7; color: #1d1d1f; }
         h1 { font-size: 24px; text-align: center; color: #ff3b30; margin-bottom: 5px; }
@@ -28,7 +28,7 @@
 <body>
 
     <h1>🍽️ Gerechten Selector</h1>
-    <div class="version-badge">Versie v2.3.2 (Fix Chatgpt)</div>
+    <div class="version-badge">Versie v2.3.1 (Splitsing Fix)</div>
 
     <!-- CARD 1: MAALTIJD SELECTIE & IMPORT -->
     <div class="card">
@@ -114,133 +114,245 @@
         };
 
         let lastCalculationResult = "";
+        let wasmReady = false;
 
-		async function run() {
+        async function run() {
+            // De interface en bestandsimport mogen niet afhangen van WASM.
+            renderAll();
 
-			// Eerst de gewone interface opbouwen
-			renderAll();
+            // Bestandsinvoer
+            document.getElementById('fileInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
 
-			// Bestandsinvoer werkt onafhankelijk van WASM
-			document.getElementById('fileInput').addEventListener('change', function(e) {
-				const file = e.target.files[0];
+                if (!file) return;
 
-				if (!file) return;
+                const reader = new FileReader();
 
-				const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const content = evt.target.result;
+                        const lines = content.split(/\r?\n/);
 
-				reader.onload = function(evt) {
-					try {
-						const content = evt.target.result;
-						const lines = content.split(/\r?\n/);
+                        if (!state.choices[state.activeMeal]) {
+                            state.choices[state.activeMeal] = {};
+                        }
 
-						if (!state.choices[state.activeMeal]) {
-							state.choices[state.activeMeal] = {};
-						}
+                        let loadedCount = 0;
 
-						let loadedCount = 0;
+                        for (const line of lines) {
+                            const trimmedLine = line.trim();
 
-						for (const line of lines) {
-							const trimmedLine = line.trim();
+                            if (!trimmedLine || !trimmedLine.includes(':')) {
+                                continue;
+                            }
 
-							if (!trimmedLine || !trimmedLine.includes(':')) {
-								continue;
-							}
+                            // Alleen de eerste ':' is het scheidingsteken.
+                            const separatorIndex = trimmedLine.indexOf(':');
 
-							// Alleen splitsen op de EERSTE dubbele punt
-							const separatorIndex = trimmedLine.indexOf(':');
+                            const extractedPerson =
+                                trimmedLine.substring(0, separatorIndex).trim();
 
-							const extractedPerson =
-								trimmedLine.substring(0, separatorIndex).trim();
+                            const extractedDishesString =
+                                trimmedLine.substring(separatorIndex + 1).trim();
 
-							const extractedDishesString =
-								trimmedLine.substring(separatorIndex + 1).trim();
+                            if (!extractedPerson) {
+                                continue;
+                            }
 
-							if (!extractedPerson) {
-								continue;
-							}
+                            if (!state.persons.includes(extractedPerson)) {
+                                state.persons.push(extractedPerson);
+                            }
 
-							// Persoon toevoegen aan globale database
-							if (!state.persons.includes(extractedPerson)) {
-								state.persons.push(extractedPerson);
-							}
+                            const loadedDishes = extractedDishesString
+                                .split(',')
+                                .map(s => s.trim())
+                                .filter(s => s.length > 0);
 
-							// Gerechten uitlezen
-							const loadedDishes = extractedDishesString
-								.split(',')
-								.map(s => s.trim())
-								.filter(s => s.length > 0);
+                            loadedDishes.forEach(dish => {
+                                if (!state.dishes.includes(dish)) {
+                                    state.dishes.push(dish);
+                                }
+                            });
 
-							// Gerechten toevoegen aan globale database
-							loadedDishes.forEach(dish => {
-								if (!state.dishes.includes(dish)) {
-									state.dishes.push(dish);
-								}
-							});
+                            state.choices[state.activeMeal][extractedPerson] =
+                                loadedDishes;
 
-							// Keuzes opslaan voor huidige maaltijd
-							state.choices[state.activeMeal][extractedPerson] =
-								loadedDishes;
+                            loadedCount++;
+                        }
 
-							loadedCount++;
-						}
+                        e.target.value = '';
+                        renderAll();
 
-						// File input resetten zodat hetzelfde bestand opnieuw
-						// geselecteerd kan worden
-						e.target.value = '';
+                        document.getElementById('output').textContent =
+                            `✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'.\n` +
+                            `${loadedCount} personen verwerkt.`;
 
-						renderAll();
+                    } catch (error) {
+                        console.error("Fout bij verwerken bestand:", error);
 
-						document.getElementById('output').textContent =
-							`✅ Bestand '${file.name}' succesvol ingeladen voor '${state.activeMeal}'.\n` +
-							`${loadedCount} personen verwerkt.`;
+                        document.getElementById('output').textContent =
+                            `❌ Fout bij verwerken van '${file.name}': ${error.message}`;
 
-					} catch (error) {
-						console.error("Fout bij verwerken bestand:", error);
+                        e.target.value = '';
+                    }
+                };
 
-						document.getElementById('output').textContent =
-							`❌ Fout bij verwerken van '${file.name}': ${error.message}`;
+                reader.onerror = function() {
+                    document.getElementById('output').textContent =
+                        `❌ Het bestand '${file.name}' kon niet worden gelezen.`;
 
-						e.target.value = '';
-					}
-				};
+                    e.target.value = '';
+                };
 
-				reader.onerror = function() {
-					document.getElementById('output').textContent =
-						`❌ Het bestand '${file.name}' kon niet worden gelezen.`;
+                reader.readAsText(file, 'UTF-8');
+            });
 
-					e.target.value = '';
-				};
+            // WASM afzonderlijk initialiseren.
+            // De bestandsimport blijft werken als WASM niet kan laden.
+            try {
+                await init();
+                wasmReady = true;
 
-				reader.readAsText(file, 'UTF-8');
-			});
+                console.log("WASM succesvol geladen.");
 
+                document.getElementById('output').textContent =
+                    "✅ Klaar. Bestand kan worden geladen en berekend.";
 
-			// WASM afzonderlijk initialiseren
-			try {
-				await init();
+            } catch (error) {
+                wasmReady = false;
 
-				console.log("WASM succesvol geladen.");
+                console.error("WASM initialisatie mislukt:", error);
 
-				document.getElementById('output').textContent =
-					"✅ Klaar. Bestand kan worden geladen.";
+                document.getElementById('output').textContent =
+                    "⚠️ Bestand laden werkt, maar de rekenmodule kon niet worden geladen.\n\n" +
+                    `Technische fout: ${error.message}`;
+            }
 
-			} catch (error) {
-				console.error("WASM initialisatie mislukt:", error);
+            // Maaltijdwissel listener
+            document.getElementById('mealSelect').addEventListener('change', (e) => {
+                state.activeMeal = e.target.value;
+                renderAll();
+            });
 
-				document.getElementById('output').textContent =
-					"⚠️ Bestandsinvoer werkt, maar de rekenmodule kon niet worden geladen.\n\n" +
-					"Controleer of de map 'pkg' naast index.html staat.\n\n" +
-					`Technische fout: ${error.message}`;
-			}
+            // Knoppen voor handmatige invoer
+            document.getElementById('addMealBtn').addEventListener('click', () => {
+                const name = document.getElementById('newMealInput').value.trim();
+                if (name && !state.meals.includes(name)) {
+                    state.meals.push(name);
+                    state.activeMeal = name;
+                    document.getElementById('newMealInput').value = '';
+                    renderAll();
+                }
+            });
 
+            document.getElementById('addPersonBtn').addEventListener('click', () => {
+                const name = document.getElementById('newPersonInput').value.trim();
+                if (name && !state.persons.includes(name)) {
+                    state.persons.push(name);
+                    document.getElementById('newPersonInput').value = '';
+                    renderAll();
+                }
+            });
 
-			// Maaltijdwissel listener
-			document.getElementById('mealSelect').addEventListener('change', (e) => {
-				state.activeMeal = e.target.value;
-				renderAll();
-			});
-		}
-		
+            document.getElementById('addDishBtn').addEventListener('click', () => {
+                const name = document.getElementById('newDishInput').value.trim();
+                if (name && !state.dishes.includes(name)) {
+                    state.dishes.push(name);
+                    document.getElementById('newDishInput').value = '';
+                    renderAll();
+                }
+            });
+
+            document.getElementById('addChoiceBtn').addEventListener('click', () => {
+                const person = document.getElementById('prefPersonSelect').value;
+                const dish = document.getElementById('prefDishSelect').value;
+                if (!person || !dish) return;
+
+                if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
+                if (!state.choices[state.activeMeal][person]) state.choices[state.activeMeal][person] = [];
+                
+                if (!state.choices[state.activeMeal][person].includes(dish)) {
+                    state.choices[state.activeMeal][person].push(dish);
+                    renderAll();
+                }
+            });
+
+            // Berekenen knop logica richting WASM
+            // Berekenen knop logica richting WASM
+            document.getElementById('calcBtn').addEventListener('click', () => {
+                if (!wasmReady) {
+                    document.getElementById('output').textContent =
+                        "❌ De rekenmodule is niet geladen.\n\n" +
+                        "De keuzes zijn wel ingelezen, maar 'Bereken Groepsmenu' " +
+                        "kan de WASM-module niet uitvoeren.\n\n" +
+                        "Controleer of de map 'pkg' naast index.html staat.";
+                    return;
+                }
+
+                try {
+                    const currentMealChoices =
+                        state.choices[state.activeMeal] || {};
+
+                    let simulatedFileContent = "";
+
+                    for (let i = 0; i < state.persons.length; i++) {
+                        const person = state.persons[i];
+                        const chosen = currentMealChoices[person] || [];
+
+                        simulatedFileContent +=
+                            person + ": " + chosen.join(', ') + "\n";
+                    }
+
+                    const p =
+                        parseInt(document.getElementById('pInput').value) || 2;
+
+                    const mode =
+                        document.getElementById('modeInput').value;
+
+                    console.log("Input naar WASM:", simulatedFileContent);
+                    console.log("P:", p);
+                    console.log("Mode:", mode);
+
+                    const result =
+                        select_dishes(simulatedFileContent, p, mode);
+
+                    lastCalculationResult =
+                        `Maaltijd: ${state.activeMeal}\n` +
+                        `========================================\n` +
+                        result;
+
+                    document.getElementById('output').textContent =
+                        lastCalculationResult;
+
+                } catch (error) {
+                    console.error("Fout bij berekenen:", error);
+
+                    document.getElementById('output').textContent =
+                        "❌ Er ging iets mis tijdens het berekenen.\n\n" +
+                        `Technische fout: ${error.message}`;
+                }
+            });
+
+            // Universele Export naar TXT
+            document.getElementById('exportBtn').addEventListener('click', () => {
+                if (!lastCalculationResult) {
+                    alert("⚠️ Er is nog geen berekening uitgevoerd om te exporteren. Klik eerst op 'Bereken Groepsmenu'.");
+                    return;
+                }
+
+                const blob = new Blob([lastCalculationResult], { type: 'text/plain;charset=utf-8' });
+                const link = document.createElement('a');
+                const safeMealName = state.activeMeal.replace(/[^a-z0-9]/gi, '_');
+                
+                link.download = `resultaat_${safeMealName}.txt`;
+                link.href = URL.createObjectURL(blob);
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+
         // Dropdowns en overzichten up-to-date houden
         function renderAll() {
             document.getElementById('mealSelect').innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
@@ -290,7 +402,12 @@
             renderAll();
         };
 
-        run();
+        run().catch(error => {
+            console.error("Onverwachte fout bij initialisatie:", error);
+            document.getElementById('output').textContent =
+                "❌ Onverwachte fout bij initialisatie:\n\n" +
+                error.message;
+        });
     </script>
 </body>
 </html>
