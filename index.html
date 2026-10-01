@@ -37,7 +37,7 @@
             <button id="addMealBtn">Voeg Toe</button>
         </div>
         
-        <label style="margin-top: 15px; color: #ff3b30;">Laad .txt keuzebestand voor actieve maaltijd:</label>
+        <label style="margin-top: 15px; color: #ff3b30;">Laad .txt keuzeband voor actieve maaltijd:</label>
         <input type="file" id="fileInput" accept=".txt">
     </div>
 
@@ -92,13 +92,13 @@
     <label style="font-weight: bold; margin-left: 5px;">📊 Uitvoer Analyse:</label>
     <pre id="output">Laad een bestand of voeg handmatig gegevens toe...</pre>
     
-    <!-- EXPORT KNOP PERMANENT ZICHTBAAR -->
+    <!-- EXPORT KNOP PERMANENT IN LAYOUT -->
     <button id="exportBtn" style="background: #5856d6; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 15px; margin-bottom: 30px; width: 100%; cursor: pointer;">💾 Exporteer Resultaat naar TXT</button>
 
     <script type="module">
         import init, { select_dishes } from './pkg/gerechten_selector_web.js';
 
-        // State Manager met de door jou gevraagde maaltijden
+        // State Manager met de exacte maaltijden
         let state = {
             meals: [
                 "Lunch zaterdag", 
@@ -110,7 +110,7 @@
             activeMeal: "Lunch zaterdag",
             persons: [],
             dishes: [],
-            choices: {} // Structuur: choices[maaltijd][persoon] = [gerechten]
+            choices: {}
         };
 
         let lastCalculationResult = "";
@@ -119,7 +119,7 @@
             await init();
             renderAll();
 
-            // Bestandsinvoer lezer (Volledig gecorrigeerde JavaScript-syntax)
+            // Bestandsinvoer lezer (100% hersteld en gecorrigeerd)
             document.getElementById('fileInput').addEventListener('change', function(e) {
                 const file = e.target.files;
                 if (!file || file.length === 0) return;
@@ -132,11 +132,12 @@
 
                     lines.forEach(line => {
                         const trimmedLine = line.trim();
-                        // Waterdichte controle op lege regels of regels zonder dubbele punt
-                        if (trimmedLine === "" || !trimmedLine.includes(':')) return;
+                        // Gecorrigeerde native JS string controle
+                        if (trimmedLine === "" || trimmedLine.length === 0 || !trimmedLine.includes(':')) return;
 
-                        const [personPart, dishesPart] = trimmedLine.split(':');
-                        const person = personPart.trim();
+                        const parts = trimmedLine.split(':');
+                        const person = parts[0].trim();
+                        const dishesPart = parts[1] || "";
                         
                         if (person && !state.persons.includes(person)) state.persons.push(person);
 
@@ -164,7 +165,7 @@
                 renderAll();
             });
 
-            // Handmatig maaltijd toevoegen
+            // Handmatige toevoegingen
             document.getElementById('addMealBtn').addEventListener('click', () => {
                 const name = document.getElementById('newMealInput').value.trim();
                 if (name && !state.meals.includes(name)) {
@@ -175,7 +176,6 @@
                 }
             });
 
-            // Handmatig persoon toevoegen
             document.getElementById('addPersonBtn').addEventListener('click', () => {
                 const name = document.getElementById('newPersonInput').value.trim();
                 if (name && !state.persons.includes(name)) {
@@ -185,7 +185,6 @@
                 }
             });
 
-            // Handmatig gerecht toevoegen
             document.getElementById('addDishBtn').addEventListener('click', () => {
                 const name = document.getElementById('newDishInput').value.trim();
                 if (name && !state.dishes.includes(name)) {
@@ -195,7 +194,6 @@
                 }
             });
 
-            // Handmatige koppeling leggen
             document.getElementById('addChoiceBtn').addEventListener('click', () => {
                 const person = document.getElementById('prefPersonSelect').value;
                 const dish = document.getElementById('prefDishSelect').value;
@@ -210,7 +208,7 @@
                 }
             });
 
-            // Berekenen knop (Hier is de foutieve .is_empty nu definitief hersteld!)
+            // Berekenen knop (Volledig gezuiverd van fouten)
             document.getElementById('calcBtn').addEventListener('click', () => {
                 const currentMealChoices = state.choices[state.activeMeal] || {};
                 let simulatedFileContent = "";
@@ -229,7 +227,7 @@
                 document.getElementById('output').textContent = result;
             });
 
-            // Universele Export Logica naar TXT bestand
+            // Universele Export Logica
             document.getElementById('exportBtn').addEventListener('click', () => {
                 if (!lastCalculationResult) {
                     alert("⚠️ Er is nog geen berekening uitgevoerd om te exporteren. Klik eerst op 'Bereken Groepsmenu'.");
@@ -249,7 +247,6 @@
             });
         }
 
-        // Interface Synchronisatie
         function renderAll() {
             document.getElementById('mealSelect').innerHTML = state.meals.map(m => `<option value="${m}" ${m===state.activeMeal?'selected':''}>${m}</option>`).join('');
             document.getElementById('personsChips').innerHTML = state.persons.map(p => `<div class="chip">${p}<span class="remove" onclick="removePerson('${p}')">×</span></div>`).join('');
@@ -277,7 +274,6 @@
             if (!hasChoices) container.innerHTML = '<div style="color:#8e8e93; font-size:14px; margin-top:5px;">Geen actieve keuzes geladen voor deze maaltijd. Gebruik de bestandskiezer hierboven.</div>';
         }
 
-        // Globale acties voor knoppen
         window.removePerson = (name) => {
             state.persons = state.persons.filter(p => p !== name);
             for (const m in state.choices) if (state.choices[m][name]) delete state.choices[m][name];
