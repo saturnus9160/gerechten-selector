@@ -101,7 +101,7 @@
             activeMeal: "Zaterdag Bites",
             persons: [],
             dishes: [],
-            choices: {} // Wordt dynamisch gevuld per maaltijd: choices[maaltijd][persoon] = [gerechten]
+            choices: {} // Structuur: choices[maaltijd][persoon] = [gerechten]
         };
 
         async function run() {
@@ -120,9 +120,11 @@
                     if (!state.choices[state.activeMeal]) state.choices[state.activeMeal] = {};
 
                     lines.forEach(line => {
-                        if (line.trim().is_empty || !line.includes(':')) return;
+                        const trimmedLine = line.trim();
+                        // Gecorrigeerde JavaScript check voor lege regels
+                        if (trimmedLine === "" || !trimmedLine.includes(':')) return;
 
-                        const [personPart, dishesPart] = line.split(':');
+                        const [personPart, dishesPart] = trimmedLine.split(':');
                         const person = personPart.trim();
                         
                         // Voeg persoon toe aan globale database indien nieuw
